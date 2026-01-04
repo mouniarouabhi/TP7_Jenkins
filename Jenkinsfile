@@ -29,7 +29,11 @@ pipeline {
             steps {
                 echo '========== Phase Code Analysis =========='
                 echo 'Analyse de la qualité du code avec SonarQube...'
-                bat './gradlew.bat sonar'
+                script {
+                    withSonarQubeEnv('SonarQube') {
+                        bat './gradlew.bat sonar'
+                    }
+                }
             }
         }
 
