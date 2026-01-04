@@ -3,26 +3,10 @@ plugins {
     id 'maven-publish'
     id 'jacoco'
     id 'org.sonarqube' version '5.1.0.4882'
-    id 'application'
 }
 
 group = 'com.example'
 version = '1.0-SNAPSHOT'
-
-import groovy.json.JsonOutput
-
-tasks.register("slackNotify") {
-    doLast {
-        def webhook = "https://hooks.slack.com/services/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"
-        def message = [text: "🚀 Déploiement réussi depuis Gradle !"]
-        def payload = JsonOutput.toJson(message).replace('"', '\\"')
-
-        exec {
-            commandLine "cmd", "/c",
-                    "curl -X POST -H \"Content-type: application/json\" --data \"${payload}\" \"${webhook}\""
-        }
-    }
-}
 
 repositories {
     mavenCentral()
@@ -51,8 +35,8 @@ jacocoTestReport {
 
 sonarqube {
     properties {
-        property 'sonar.projectKey', 'Gradle_Example'
-        property 'sonar.projectName', 'TP'
+        property 'sonar.projectKey', 'TP7_Jenkins'
+        property 'sonar.projectName', 'TP7 Jenkins Pipeline'
         property 'sonar.host.url', 'http://localhost:9000/'
         property 'sonar.sources', 'src/main/java'
         property 'sonar.tests', 'src/test/java'
@@ -67,7 +51,7 @@ sonarqube {
 publishing {
     repositories {
         maven {
-            url = uri('http://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/')
+            url = uri(System.getenv('MAVEN_REPO_URL') ?: 'http://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/')
             allowInsecureProtocol = true
             credentials {
                 username = System.getenv('MAVEN_USERNAME') ?: 'myMavenRepo'
@@ -80,47 +64,31 @@ publishing {
         maven(MavenPublication) {
             from components.java
             groupId = 'com.example'
-            artifactId = 'tp5-rouabhi-final'
+            artifactId = 'tp7-jenkins'
             version = '1.0.0'
         }
     }
 }
 
+// Tâche pour générer le JAR
+jar {
+    manifest {
+        attributes(
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        )
+    }
+}
+
+// Tâche pour générer la documentation Javadoc
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.compileClasspath
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+}
+
+// Finaliser les tests avec le rapport JaCoCo
 tasks.named('test') {
-    finalizedBy 'jacocoTestReport', 'sonar'
-}
-
-// Configuration email
-def gmailUser = 'mm_rouabhi@esi.dz'
-def gmailPassword = 'utedxetsvrrsirtt'
-def gmailRecipient = 'mm_rouabhi@esi.dz'
-
-tasks.register("sendDeploymentEmail") {
-    doLast {
-        exec {
-            commandLine "powershell", "-Command", """
-                \$smtpServer = 'smtp.gmail.com'
-                \$smtpUser = '${gmailUser}'
-                \$smtpPass = '${gmailPassword}' | ConvertTo-SecureString -AsPlainText -Force
-                \$cred = New-Object System.Management.Automation.PSCredential(\$smtpUser, \$smtpPass)
-                Send-MailMessage -From '${gmailUser}' -To '${gmailRecipient}' -Subject 'Deployment OK' -Body 'The deployment was successful.' -SmtpServer \$smtpServer -Port 587 -UseSsl -Credential \$cred
-            """
-        }
-        println "📧 Email sent via PowerShell!"
-    }
-}
-
-
-// Exécuter automatiquement après la publication
-publish.finalizedBy(tasks.named("sendDeploymentEmail"))
-
-// Ou créer une tâche de déploiement complète
-tasks.register('deploy') {
-    dependsOn 'test', 'publish', 'sendDeploymentEmail', 'slackNotify'
-    group = 'deployment'
-    description = 'Déploiement complet avec notifications (Slack + Email)'
-
-    doLast {
-        println '✓ Déploiement terminé avec succès!'
-    }
+    finalizedBy 'jacocoTestReport'
 }
