@@ -1,20 +1,26 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'JDK17'
+    }
+
     stages {
+
         // ========================================
         // Phase 1 : TEST
         // ========================================
         stage('Test') {
             steps {
                 echo '========== Phase Test =========='
+
                 echo '1. Lancement des tests unitaires...'
-                bat './gradlew.bat test'
+                bat 'gradlew.bat test'
 
                 echo '2. Archivage des résultats des tests unitaires...'
                 junit '**/build/test-results/test/*.xml'
 
-                echo '3. Génération des rapports de tests Cucumber...'
+                echo '3. Génération des rapports Cucumber...'
                 cucumber buildStatus: 'SUCCESS',
                          reportTitle: 'Cucumber Test Report',
                          fileIncludePattern: '**/*.json',
@@ -28,10 +34,13 @@ pipeline {
         stage('Code Analysis') {
             steps {
                 echo '========== Phase Code Analysis =========='
-                echo 'Analyse de la qualité du code avec SonarQube...'
-                script {
-                    withSonarQubeEnv('sonar') {
-                        bat './gradlew.bat sonar'
+
+                withSonarQubeEnv('sonar') {
+                    withCredentials([string(
+                        credentialsId: 'sonar-token',
+                        variable: 'SONAR_TOKEN'
+                    )]) {
+                        bat 'gradlew.bat sonar -Dsonar.login=%SONAR_TOKEN%'
                     }
                 }
             }
@@ -43,11 +52,10 @@ pipeline {
         stage('Code Quality Gate') {
             steps {
                 echo '========== Phase Code Quality =========='
-                echo 'Vérification de l\'état de Quality Gates...'
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
                 }
-                echo 'Quality Gate : PASSED ✓'
+                echo 'Quality Gate PASSED ✓'
             }
         }
 
@@ -59,19 +67,14 @@ pipeline {
                 echo '========== Phase Build =========='
 
                 echo '1. Génération du fichier JAR...'
-                bat './gradlew.bat jar'
+                bat 'gradlew.bat jar'
 
                 echo '2. Génération de la documentation...'
-                bat './gradlew.bat javadoc'
+                bat 'gradlew.bat javadoc'
 
-                echo '3. Archivage du fichier JAR et de la documentation...'
-                archiveArtifacts artifacts: '**/build/libs/*.jar',
-                                 fingerprint: true,
-                                 allowEmptyArchive: false
-
-                archiveArtifacts artifacts: '**/build/docs/javadoc/**',
-                                 fingerprint: true,
-                                 allowEmptyArchive: false
+                echo '3. Archivage des artefacts...'
+                archiveArtifacts artifacts: '**/build/libs/*.jar', fingerprint: true
+                archiveArtifacts artifacts: '**/build/docs/javadoc/**', fingerprint: true
             }
         }
 
@@ -81,9 +84,16 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo '========== Phase Deploy =========='
-                echo 'Déploiement du fichier JAR sur MyMavenRepo...'
-                bat './gradlew.bat publish'
-                echo 'Déploiement réussi ✓'
+
+                withCredentials([usernamePassword(
+                    credentialsId: 'maven-repo-creds',
+                    usernameVariable: 'MAVEN_USERNAME',
+                    passwordVariable: 'MAVEN_PASSWORD'
+                )]) {
+                    bat 'gradlew.bat publish'
+                }
+
+                echo 'Déploiement sur MyMavenRepo réussi ✓'
             }
         }
     }
@@ -92,60 +102,67 @@ pipeline {
     // Phase 6 : NOTIFICATION
     // ========================================
     post {
+
         success {
-            echo '========== Phase Notification (SUCCESS) =========='
             script {
-                // Notification par Email
+
+                // EMAIL
                 emailext (
-                    subject: "✅ SUCCESS: Pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """
-                        <h2>Déploiement réussi !</h2>
-                        <p><strong>Projet:</strong> ${env.JOB_NAME}</p>
-                        <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
-                        <p><strong>Status:</strong> <span style="color:green;">SUCCESS</span></p>
-                        <p><strong>URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                        <hr>
-                        <p>Toutes les phases du pipeline ont été exécutées avec succès.</p>
+                        <h2>Déploiement réussi</h2>
+                        <p><b>Projet:</b> ${env.JOB_NAME}</p>
+                        <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                        <p><b>Status:</b> <span style='color:green;'>SUCCESS</span></p>
+                        <p><a href='${env.BUILD_URL}'>Voir le build</a></p>
                     """,
-                    to: 'mm_rouabhi@esi.dz',
-                    from: 'jenkins@esi.dz',
+                    to: "${env.GMAIL_RECIPIENT}",
                     mimeType: 'text/html'
                 )
 
-                // Notification Slack
-                bat """
-                    curl -X POST -H "Content-type: application/json" --data "{\\"text\\":\\"🚀 Déploiement réussi: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" https://hooks.slack.com/services/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
-                """
+                // SLACK
+                withCredentials([string(
+                    credentialsId: 'slack-webhook',
+                    variable: 'SLACK_WEBHOOK'
+                )]) {
+                    bat """
+                        curl -X POST -H "Content-type: application/json" ^
+                        --data "{\\"text\\":\\"🚀 Déploiement réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        %SLACK_WEBHOOK%
+                    """
+                }
             }
-            echo 'Notifications envoyées (Email + Slack) ✓'
         }
 
         failure {
-            echo '========== Phase Notification (FAILURE) =========='
             script {
-                // Notification par Email en cas d'échec
+
+                // EMAIL
                 emailext (
-                    subject: "❌ FAILED: Pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """
-                        <h2>Échec du pipeline !</h2>
-                        <p><strong>Projet:</strong> ${env.JOB_NAME}</p>
-                        <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
-                        <p><strong>Status:</strong> <span style="color:red;">FAILED</span></p>
-                        <p><strong>URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                        <hr>
-                        <p>Une ou plusieurs phases du pipeline ont échoué. Veuillez vérifier les logs.</p>
+                        <h2>Échec du pipeline</h2>
+                        <p><b>Projet:</b> ${env.JOB_NAME}</p>
+                        <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                        <p><b>Status:</b> <span style='color:red;'>FAILED</span></p>
+                        <p><a href='${env.BUILD_URL}'>Voir les logs</a></p>
                     """,
-                    to: 'mm_rouabhi@esi.dz',
-                    from: 'jenkins@esi.dz',
+                    to: "${env.GMAIL_RECIPIENT}",
                     mimeType: 'text/html'
                 )
 
-                // Notification Slack en cas d'échec
-                bat """
-                    curl -X POST -H "Content-type: application/json" --data "{\\"text\\":\\"❌ Échec du pipeline: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" https://hooks.slack.com/services/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
-                """
+                // SLACK
+                withCredentials([string(
+                    credentialsId: 'slack-webhook',
+                    variable: 'SLACK_WEBHOOK'
+                )]) {
+                    bat """
+                        curl -X POST -H "Content-type: application/json" ^
+                        --data "{\\"text\\":\\"❌ Échec du pipeline : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        %SLACK_WEBHOOK%
+                    """
+                }
             }
-            echo 'Notifications d\'échec envoyées (Email + Slack) ✓'
         }
     }
 }
