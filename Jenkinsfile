@@ -82,6 +82,7 @@ pipeline {
                 echo '========== Phase Deploy =========='
 
                 withCredentials([usernamePassword(
+                    credentialsId: 'maven-repo-creds',
                     usernameVariable: 'MAVEN_USERNAME',
                     passwordVariable: 'MAVEN_PASSWORD'
                 )]) {
@@ -117,6 +118,7 @@ pipeline {
 
                 // SLACK
                 withCredentials([string(
+                    credentialsId: 'slack-webhook',
                     variable: 'SLACK_WEBHOOK'
                 )]) {
                     bat """
