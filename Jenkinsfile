@@ -117,7 +117,6 @@ pipeline {
 
                 // SLACK
                 withCredentials([string(
-                    credentialsId: 'slack-webhook',
                     variable: 'SLACK_WEBHOOK'
                 )]) {
                     bat """
