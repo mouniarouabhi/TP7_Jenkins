@@ -106,7 +106,7 @@ pipeline {
         success {
             script {
 
-                // MAIL
+                // EMAIL
                 emailext (
                     subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """
