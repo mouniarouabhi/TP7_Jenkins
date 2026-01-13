@@ -89,7 +89,7 @@ pipeline {
                     bat 'gradlew.bat publish'
                 }
 
-                echo 'Déploiement sur myMavenRepo réussi ✓'
+                echo 'Déploiement sur myMavenRepo réussi'
             }
         }
     }
