@@ -103,7 +103,7 @@ pipeline {
             script {
                 // EMAIL (non-blocking)
                 try {
-                    email-text(
+                    emailext(
                         subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         body: """
                             <h2>Deploiement reussi</h2>
@@ -112,8 +112,9 @@ pipeline {
                             <p><b>Status:</b> SUCCESS</p>
                             <p><a href='${env.BUILD_URL}'>Voir le build</a></p>
                         """,
-                        to: "mm_rouabhi@esi.dz",
+                        to: "mr_asbar@esi.dz",
                         mimeType: 'text/html'
+                        replyTo: "mm_rouabhi@esi.dz"
                     )
                 } catch (err) {
                     echo "Email failed (SMTP/network restriction)"
