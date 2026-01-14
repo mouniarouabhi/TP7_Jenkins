@@ -113,7 +113,7 @@ pipeline {
                             <p><a href='${env.BUILD_URL}'>Voir le build</a></p>
                         """,
                         to: "mr_asbar@esi.dz",
-                        mimeType: 'text/html'
+                        mimeType: 'text/html',
                         replyTo: "mm_rouabhi@esi.dz"
                     )
                 } catch (err) {
