@@ -106,7 +106,7 @@ pipeline {
                 emailext (
                     subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """
-                        <h2>Déploiement réussi</h2>
+                        <h2>Déploiement reussi</h2>
                         <p><b>Projet:</b> ${env.JOB_NAME}</p>
                         <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
                         <p><b>Status:</b> <span style='color:green;'>SUCCESS</span></p>
