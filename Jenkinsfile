@@ -103,7 +103,7 @@ pipeline {
             script {
                 // EMAIL (non-blocking)
                 try {
-                    emailext(
+                    email-text(
                         subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         body: """
                             <h2>Deploiement reussi</h2>
