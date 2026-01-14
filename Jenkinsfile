@@ -112,7 +112,7 @@ pipeline {
                             <p><b>Status:</b> SUCCESS</p>
                             <p><a href='${env.BUILD_URL}'>Voir le build</a></p>
                         """,
-                        to: "rouabhi.mounia19@gmail.com",
+                        to: "mm_rouabhi@esi.dz",
                         mimeType: 'text/html'
                     )
                 } catch (err) {
