@@ -29,7 +29,7 @@ pipeline {
         // ========================================
         stage('Code Analysis') {
             steps {
-                echo '========== Phase Code Analysis =========='
+                echo '========== Phase Code Analyss =========='
 
                 withSonarQubeEnv('sonar') {
                     withCredentials([string(
