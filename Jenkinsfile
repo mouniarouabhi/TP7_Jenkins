@@ -13,10 +13,10 @@ pipeline {
                 echo '1. Lancement des tests unitaires...'
                 bat 'gradlew.bat test'
 
-                echo '2. Archivage des résultats des tests unitaires...'
+                echo '2. Archivage des resultats des tests unitaires...'
                 junit '**/build/test-results/test/*.xml'
 
-                echo '3. Génération des rapports Cucumber...'
+                echo '3. Generation des rapports Cucumber...'
                 cucumber buildStatus: 'SUCCESS',
                          reportTitle: 'Cucumber Test Report',
                          fileIncludePattern: '**/*.json',
@@ -62,10 +62,10 @@ pipeline {
             steps {
                 echo '========== Phase Build =========='
 
-                echo '1. Génération du fichier JAR...'
+                echo '1. Generation du fichier JAR...'
                 bat 'gradlew.bat jar'
 
-                echo '2. Génération de la documentation...'
+                echo '2. Generation de la documentation...'
                 bat 'gradlew.bat javadoc'
 
                 echo '3. Archivage des artefacts...'
@@ -89,7 +89,7 @@ pipeline {
                     bat 'gradlew.bat publish'
                 }
 
-                echo 'Déploiement sur myMavenRepo réussi'
+                echo 'Deploiement sur myMavenRepo reussi'
             }
         }
     }
@@ -106,7 +106,7 @@ pipeline {
                     emailext(
                         subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         body: """
-                            <h2>Déploiement réussi</h2>
+                            <h2>Deploiement reussi</h2>
                             <p><b>Projet:</b> ${env.JOB_NAME}</p>
                             <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
                             <p><b>Status:</b> SUCCESS</p>
@@ -127,7 +127,7 @@ pipeline {
                 )]) {
                     bat """
                         curl -X POST -H "Content-type: application/json" ^
-                        --data "{\\"text\\":\\"🚀 Déploiement réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        --data "{\\"text\\":\\"🚀 Deploiement reussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
                         %SLACK_WEBHOOK%
                     """
                 }
@@ -153,7 +153,7 @@ pipeline {
                 )]) {
                     bat """
                         curl -X POST -H "Content-type: application/json" ^
-                        --data "{\\"text\\":\\"❌ Échec du pipeline : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        --data "{\\"text\\":\\"❌ echec du pipeline : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
                         %SLACK_WEBHOOK%
                     """
                 }
