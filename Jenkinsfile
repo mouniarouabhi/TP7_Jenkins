@@ -101,53 +101,52 @@ pipeline {
 
         success {
             script {
+                // EMAIL (non-blocking)
+                try {
+                    emailext(
+                        subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        body: """
+                            <h2>Déploiement réussi</h2>
+                            <p><b>Projet:</b> ${env.JOB_NAME}</p>
+                            <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                            <p><b>Status:</b> SUCCESS</p>
+                            <p><a href='${env.BUILD_URL}'>Voir le build</a></p>
+                        """,
+                        to: "mm_rouabhi@esi.dz",
+                        mimeType: 'text/html'
+                    )
+                } catch (err) {
+                    echo "⚠️ Email failed (SMTP/network restriction)"
+                    echo err.toString()
+                }
 
-                // EMAIL
-                emailext (
-                    subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: """
-                        <h2>Déploiement reussi</h2>
-                        <p><b>Projet:</b> ${env.JOB_NAME}</p>
-                        <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
-                        <p><b>Status:</b> <span style='color:green;'>SUCCESS</span></p>
-                        <p><a href='${env.BUILD_URL}'>Voir le build</a></p>
-                    """,
-                    to: "${env.GMAIL_RECIPIENT}",
-                    mimeType: 'text/html'
-                )
-
-                // SLACK
+                // SLACK (blocking is OK)
                 withCredentials([string(
                     credentialsId: 'slack-webhook',
                     variable: 'SLACK_WEBHOOK'
                 )]) {
                     bat """
                         curl -X POST -H "Content-type: application/json" ^
-                        --data "{\\"text\\":\\"Dploiement réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        --data "{\\"text\\":\\"🚀 Déploiement réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
                         %SLACK_WEBHOOK%
                     """
                 }
             }
         }
 
+
         failure {
             script {
+                try {
+                    emailext(
+                        subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        body: "Pipeline failed: ${env.BUILD_URL}",
+                        to: "mm_rouabhi@esi.dz"
+                    )
+                } catch (err) {
+                    echo "⚠️ Email failed (SMTP/network restriction)"
+                }
 
-                // EMAIL
-                emailext (
-                    subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: """
-                        <h2>Échec du pipeline</h2>
-                        <p><b>Projet:</b> ${env.JOB_NAME}</p>
-                        <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
-                        <p><b>Status:</b> <span style='color:red;'>FAILED</span></p>
-                        <p><a href='${env.BUILD_URL}'>Voir les logs</a></p>
-                    """,
-                    to: "${env.GMAIL_RECIPIENT}",
-                    mimeType: 'text/html'
-                )
-
-                // SLACK
                 withCredentials([string(
                     credentialsId: 'slack-webhook',
                     variable: 'SLACK_WEBHOOK'
