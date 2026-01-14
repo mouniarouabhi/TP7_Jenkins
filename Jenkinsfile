@@ -104,7 +104,7 @@ pipeline {
                 // EMAIL (non-blocking)
                 try {
                     emailext(
-                        subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         body: """
                             <h2>Deploiement reussi</h2>
                             <p><b>Projet:</b> ${env.JOB_NAME}</p>
@@ -116,7 +116,7 @@ pipeline {
                         mimeType: 'text/html'
                     )
                 } catch (err) {
-                    echo "⚠️ Email failed (SMTP/network restriction)"
+                    echo "Email failed (SMTP/network restriction)"
                     echo err.toString()
                 }
 
@@ -127,7 +127,7 @@ pipeline {
                 )]) {
                     bat """
                         curl -X POST -H "Content-type: application/json" ^
-                        --data "{\\"text\\":\\"🚀 Deploiement reussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        --data "{\\"text\\":\\"Deploiement reussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
                         %SLACK_WEBHOOK%
                     """
                 }
@@ -139,12 +139,12 @@ pipeline {
             script {
                 try {
                     emailext(
-                        subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         body: "Pipeline failed: ${env.BUILD_URL}",
                         to: "mm_rouabhi@esi.dz"
                     )
                 } catch (err) {
-                    echo "⚠️ Email failed (SMTP/network restriction)"
+                    echo "Email failed (SMTP/network restriction)"
                 }
 
                 withCredentials([string(
@@ -153,7 +153,7 @@ pipeline {
                 )]) {
                     bat """
                         curl -X POST -H "Content-type: application/json" ^
-                        --data "{\\"text\\":\\"❌ echec du pipeline : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        --data "{\\"text\\":\\"echec du pipeline : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
                         %SLACK_WEBHOOK%
                     """
                 }
