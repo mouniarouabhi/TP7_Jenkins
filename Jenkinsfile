@@ -123,7 +123,7 @@ pipeline {
                 )]) {
                     bat """
                         curl -X POST -H "Content-type: application/json" ^
-                        --data "{\\"text\\":\\"🚀 Déploiement réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
+                        --data "{\\"text\\":\\"Dploiement réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}\\"}" ^
                         %SLACK_WEBHOOK%
                     """
                 }
